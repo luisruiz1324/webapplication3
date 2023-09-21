@@ -3,6 +3,7 @@ using System;
 using System.Reflection.Metadata.Ecma335;
 using TimeClock.Controllers.V1.Requests;
 using TimeClock.Domain;
+using TimeClock.Extensions;
 using WebApplication1.Data;
 
 namespace TimeClock.Services
@@ -17,7 +18,7 @@ namespace TimeClock.Services
             _dataContext = dataContext;
             _logger = logger;
         }
-        public async Task<Shift> CreateShiftAsync(string userId, bool isAdmin)
+        public async Task<Shift> CreateShiftAsync(string userId)
         {
             try
             {
@@ -27,7 +28,10 @@ namespace TimeClock.Services
                     throw new Exception("User does not exist");
                 }
 
-                if(_dataContext.Shifts.Any(x => x.UserId == userId && x.IsActive == true) && isAdmin == false) {
+                bool isAdmin = _dataContext.IsAdmin(userId);
+
+                if (_dataContext.Shifts.Any(x => x.UserId == userId && x.IsActive == true) && isAdmin == false)
+                {
                     _logger.LogError("User already has an active shift. Can't start new one");
                     throw new Exception("User already has an active shift. Can't start new one");
                 }
@@ -48,7 +52,8 @@ namespace TimeClock.Services
                 await _dataContext.AddAsync(shift);
                 var created = await _dataContext.SaveChangesAsync();
                 return shift;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError($"Failed to create shift for userId:{userId}");
                 throw;
@@ -58,14 +63,15 @@ namespace TimeClock.Services
         public async Task<List<Shift>> GetShiftsAsync(string userId = null, bool? isActive = null)
         {
             var queryable = _dataContext.Shifts.AsQueryable();
-            if (!string.IsNullOrEmpty(userId)) {
+            if (!string.IsNullOrEmpty(userId))
+            {
                 queryable = queryable.Where(x => x.UserId == userId);
             }
-            if(isActive != null)
+            if (isActive != null)
             {
                 queryable = queryable.Where(x => x.IsActive == isActive);
             }
-            return await queryable.OrderByDescending(x => x.IsActive).OrderByDescending(x=> x.StartTime).ToListAsync();
+            return await queryable.OrderByDescending(x => x.IsActive).OrderByDescending(x => x.StartTime).ToListAsync();
         }
 
         public async Task<List<Shift>> GetShiftsByUserIdAsync(string userId)
@@ -73,17 +79,17 @@ namespace TimeClock.Services
             return await _dataContext.Shifts.Where(x => x.UserId == userId).ToListAsync();
         }
 
-        public async Task<UpdateShiftResult> UpdateShiftAsync(UpdateShiftType updateShiftType, int shiftId, bool isAdmin)
+        public async Task<UpdateShiftResult> UpdateShiftAsync(UpdateShiftType updateShiftType, int shiftId)
         {
-                var shift = await _dataContext.Shifts.FirstOrDefaultAsync(x => x.Id == shiftId);
+            var shift = await _dataContext.Shifts.FirstOrDefaultAsync(x => x.Id == shiftId);
 
-                if (shift == null)
-                {
-                    _logger.LogError("Shift not found. Cannot update shift that doesn't exist");
-                    throw new Exception();
-                }
+            if (shift == null)
+            {
+                _logger.LogError("Shift not found. Cannot update shift that doesn't exist");
+                throw new Exception();
+            }
 
-            var updateShiftResult = UpdateShiftHandler(updateShiftType, shift, isAdmin);
+            var updateShiftResult = UpdateShiftHandler(updateShiftType, shift);
             if (updateShiftResult.IsSuccess)
             {
                 var updatedShift = updateShiftResult.Shift;
@@ -92,13 +98,14 @@ namespace TimeClock.Services
                 return updateShiftResult;
             }
             return updateShiftResult;
-            
+
         }
 
-        private UpdateShiftResult UpdateShiftHandler(UpdateShiftType updateShiftType, Shift shift, bool isAdmin)
+        private UpdateShiftResult UpdateShiftHandler(UpdateShiftType updateShiftType, Shift shift)
         {
             try
             {
+                bool isAdmin = _dataContext.IsAdmin(shift.UserId);
 
                 if (updateShiftType == UpdateShiftType.StartLunch)
                 {
@@ -125,7 +132,8 @@ namespace TimeClock.Services
                     IsSuccess = true,
                     Shift = shift
                 };
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return new UpdateShiftResult { IsSuccess = false, Error = ex.Message };
             }
@@ -164,8 +172,8 @@ namespace TimeClock.Services
         {
             if (shift.IsActive == false)
             {
-                _logger.LogError("Shift is not active. Cannot start lunch on inactive shift");
-                throw new Exception("Shift is not active. Cannot start lunch on inactive shift");
+                _logger.LogError("Shift is not active. Cannot start break on inactive shift");
+                throw new Exception("Shift is not active. Cannot start break on inactive shift");
             }
             else if (shift.BreakStartTime != null && !isAdmin)
             {
@@ -178,8 +186,8 @@ namespace TimeClock.Services
         {
             if (shift.IsActive == false)
             {
-                _logger.LogError("Shift is not active. Cannot start lunch on inactive shift");
-                throw new Exception("Shift is not active. Cannot start lunch on inactive shift");
+                _logger.LogError("Shift is not active. Cannot end break on inactive shift");
+                throw new Exception("Shift is not active. Cannot end break on inactive shift");
             }
             else if (shift.BreakStartTime == null && !isAdmin)
             {
@@ -218,20 +226,21 @@ namespace TimeClock.Services
         private double CalculateTotalHours(Shift shift)
         {
             double totalHours = 0;
-            if (shift.StartTime != null && shift.EndTime != null) 
+            if (shift.StartTime != null && shift.EndTime != null)
             {
                 totalHours = (shift.EndTime - shift.StartTime).Value.TotalHours;
             }
-            if(shift.BreakStartTime != null && shift.BreakEndTime != null)
+            if (shift.BreakStartTime != null && shift.BreakEndTime != null)
             {
                 totalHours -= (shift.BreakEndTime - shift.BreakStartTime).Value.TotalHours;
             }
-            if(shift.LunchStartTime != null && shift.LunchEndTime != null)
+            if (shift.LunchStartTime != null && shift.LunchEndTime != null)
             {
                 totalHours -= (shift.LunchStartTime - shift.LunchEndTime).Value.TotalHours;
             }
             return totalHours;
         }
+
     }
 }
 

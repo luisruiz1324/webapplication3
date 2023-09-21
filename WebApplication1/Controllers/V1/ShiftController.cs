@@ -9,7 +9,7 @@ using TimeClock.Services;
 
 namespace TimeClock.Controllers.V1
 {
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin, Non-Admin")] 
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin, Non-Admin")]
     public class ShiftController : Controller
     {
         private readonly IShiftService _shiftService;
@@ -44,17 +44,18 @@ namespace TimeClock.Controllers.V1
             return Ok(shifts);
         }
 
-        [HttpPost("api/v1/shifts")] 
-        public async Task<IActionResult> CreateShift([FromQuery] bool isAdmin)
+        [HttpPost("api/v1/shifts")]
+        public async Task<IActionResult> CreateShift()
         {
             try
             {
                 var userId = HttpContext.GetUserId();
-                var shift = await _shiftService.CreateShiftAsync(userId, isAdmin);
+                var shift = await _shiftService.CreateShiftAsync(userId);
                 var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.ToUriComponent()}";
                 var locationUri = baseUrl + "/" + "v1/api/shifts/{userId}";
                 return Created(locationUri, shift.Id);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return Conflict(ex.Message);
             }
@@ -62,7 +63,7 @@ namespace TimeClock.Controllers.V1
         }
 
         [HttpPut("api/v1/shifts")]
-        public async Task<IActionResult> UpdateShift([FromBody] UpdateShiftRequest updateShiftRequest, [FromQuery] bool isAdmin)
+        public async Task<IActionResult> UpdateShift([FromBody] UpdateShiftRequest updateShiftRequest)
         {
             UpdateShiftType updateShiftType;
             var enumExists = Enum.TryParse<UpdateShiftType>(updateShiftRequest.UpdateShiftType, out updateShiftType);
@@ -73,8 +74,8 @@ namespace TimeClock.Controllers.V1
                     Error = $"{updateShiftRequest.UpdateShiftType} is not a valid shift update type."
                 });
             }
-            var updateShiftResult = await _shiftService.UpdateShiftAsync(updateShiftType, updateShiftRequest.ShiftId, isAdmin);
-            if(!updateShiftResult.IsSuccess)
+            var updateShiftResult = await _shiftService.UpdateShiftAsync(updateShiftType, updateShiftRequest.ShiftId);
+            if (!updateShiftResult.IsSuccess)
             {
                 return Conflict(new UpdateShiftFailedResponse
                 {
@@ -88,9 +89,9 @@ namespace TimeClock.Controllers.V1
 
 
         }
-  
-        }
+
     }
+}
 
 
 

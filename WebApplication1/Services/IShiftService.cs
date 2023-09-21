@@ -7,8 +7,8 @@ namespace TimeClock.Services
     {
         public  Task<List<Shift>> GetShiftsAsync(string userId, bool? isActive);
         public Task<List<Shift>> GetShiftsByUserIdAsync(string userId);
-        public Task<Shift> CreateShiftAsync(string userId, bool isAdmin);
-        public Task<UpdateShiftResult> UpdateShiftAsync(UpdateShiftType updateShiftType, int shiftId, bool isAdmin);
+        public Task<Shift> CreateShiftAsync(string userId);
+        public Task<UpdateShiftResult> UpdateShiftAsync(UpdateShiftType updateShiftType, int shiftId);
 
     }
 }

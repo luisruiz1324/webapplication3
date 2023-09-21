@@ -1,0 +1,13 @@
+.vs/
+.github/
+.git/
+WebApplication1/bin/
+WebApplication1/obj/
+WebApplication1/ClientApp/.angular/
+WebApplication1/ClientApp/node_modules/
+WebApplication1/ClientApp/.vscode/
+.vs
+UnitTests/bin
+UnitTests/obj
+WebApplication1/bin
+WebApplication1/obj
