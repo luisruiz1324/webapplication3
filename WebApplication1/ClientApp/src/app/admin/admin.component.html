@@ -1,0 +1,46 @@
+<div *ngIf="allShifts.length > 0" style="display:flex; flex-direction: row; align-items: center; justify-content: center; font-size: 2em; margin-bottom: 2%; margin-top: 1%; "><strong>All Shifts</strong></div>
+
+<form #filterForm="ngForm" (ngSubmit)="onSubmit(filterForm.value)">
+<div class="col-lg-4">
+    <div class="bs-component">
+       <h2>Filters</h2>
+      <ul class="list-group">
+        <input type="email" ngModel name="userId" class="form-control" placeholder="Enter UserId">      
+        <input type="email" ngModel name="isActive" class="form-control" placeholder="Enter true, false or leave blank">      
+      </ul>
+    </div>
+    <button  type="submit" class="btn btn-outline-primary" style="margin-top: 2%">Apply Filters</button>
+</div>
+</form>
+   
+      <table style="margin-top: 10%;" class="table">
+        <thead>
+          <tr class="table-active">
+            <th scope="col">ShiftId</th>
+            <th scope="col">UserId</th>
+            <th scope="col">ShiftStartTime</th>
+            <th scope="col">ShiftEndTime</th>
+            <th scope="col">LunchStartTime</th>
+            <th scope="col">LunchEndTime</th>
+            <th scope="col">BreakStartTime</th>
+            <th scope="col">BreakEndTime</th>
+            <th scope="col">TotalHours</th>
+            <th scope="col">IsActive</th>
+    
+          </tr>
+        </thead>
+        <tbody *ngIf="allShifts.length > 0">
+          <tr *ngFor="let shift of allShifts" class="table-info">
+            <td>{{shift.id}}</td>
+            <td>{{shift.userId}}</td>
+            <td>{{shift.startTime | date: 'medium'}}</td>
+            <td>{{shift.endTime | date: 'medium'}}</td>
+            <td>{{shift.lunchStartTime | date: 'medium'}}</td>
+            <td>{{shift.lunchEndTime | date: 'medium'}}</td>
+            <td>{{shift.breakStartTime | date: 'medium'}}</td>
+            <td>{{shift.breakEndTime | date: 'medium'}}</td>
+            <td>{{shift.totalHours | number: '0.2-2'}}</td>
+            <td>{{shift.isActive}}</td>
+            </tr>
+        </tbody>
+      </table>
